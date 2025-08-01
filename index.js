@@ -106,7 +106,14 @@ app.use('*', (req, res) => {
 });
 
 // Connect to MongoDB
-const mongoUri = process.env.MONGODB_URI;
+let mongoUri = process.env.MONGODB_URI;
+
+// Temporary fallback for development/testing (remove in production)
+if (!mongoUri) {
+  console.warn('⚠️  MONGODB_URI not found, using fallback URI');
+  mongoUri = 'mongodb+srv://mohitkumar:1WV0g2CIRzWI8U8X@cluster1.0ih7ekv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1';
+}
+
 if (!mongoUri) {
   console.error('❌ MONGODB_URI environment variable is not set');
   console.error('');
