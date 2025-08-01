@@ -227,12 +227,17 @@ console.log('Attempting to connect to MongoDB...');
 console.log('Connection string (masked):', mongoUri ? mongoUri.replace(/\/\/[^:]+:[^@]+@/, '//***:***@') : 'NOT SET');
 
 mongoose.connect(mongoUri, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
   serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
   socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
-  bufferMaxEntries: 0,
-  bufferCommands: false
+  maxPoolSize: 10, // Maximum number of connections in the pool
+  minPoolSize: 1, // Minimum number of connections in the pool
+  maxIdleTimeMS: 30000, // Close connections after 30s of inactivity
+  connectTimeoutMS: 10000, // Give up initial connection after 10 seconds
+  serverApi: {
+    version: '1',
+    strict: true,
+    deprecationErrors: true,
+  }
 })
 .then(() => {
   console.log('✅ Connected to MongoDB successfully');
