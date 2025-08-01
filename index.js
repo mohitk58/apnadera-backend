@@ -4,7 +4,14 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const multer = require('multer');
-require('dotenv').config({ path: './config.env' });
+
+// Load environment variables - use config.env only in development
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config({ path: './config.env' });
+} else {
+  // In production, load from .env if it exists, otherwise use platform env vars
+  require('dotenv').config();
+}
 
 const authRoutes = require('./routes/auth');
 const propertyRoutes = require('./routes/properties');
@@ -87,7 +94,14 @@ app.use('*', (req, res) => {
 });
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI)
+const mongoUri = process.env.MONGODB_URI;
+if (!mongoUri) {
+  console.error('MONGODB_URI environment variable is not set');
+  console.error('Please set MONGODB_URI in your environment variables');
+  process.exit(1);
+}
+
+mongoose.connect(mongoUri)
   .then(() => {
     console.log('Connected to MongoDB');
     app.listen(PORT, () => {
