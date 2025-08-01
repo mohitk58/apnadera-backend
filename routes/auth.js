@@ -106,9 +106,12 @@ router.post('/login', [
       token: generateToken(user._id)
     });
   } catch (error) {
+    console.error('Login error:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ 
       error: 'Server error',
-      message: 'Error during login'
+      message: 'Error during login',
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined
     });
   }
 });

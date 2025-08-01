@@ -31,7 +31,12 @@ const userRoutes = require('./routes/users');
 const contactRoutes = require('./routes/contact');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5002;
+
+// Trust proxy for Railway deployment (fixes rate limiting issues)
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
 
 // Security middleware
 app.use(helmet());
@@ -39,33 +44,36 @@ app.use(helmet());
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 100, // limit each IP to 100 requests per windowMs
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  // Use a custom key generator that works with proxies
+  keyGenerator: (req) => {
+    return req.ip || req.connection.remoteAddress || 'unknown';
+  }
 });
 app.use(limiter);
 
 // CORS
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'https://localhost:3000',
-    'https://apnadera.netlify.app', 
-    'https://sprightly-choux-d84160.netlify.app',
-    'https://*.netlify.app'
-  ];
-  
-  app.use(cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin) return callback(null, true);
-      
-      if (allowedOrigins.indexOf(origin) !== -1 || 
-          origin.endsWith('.netlify.app') ||
-          origin.includes('localhost')) {
-        callback(null, true);
-      } else {
-        console.log('CORS blocked origin:', origin);
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    console.log('CORS request from origin:', origin);
+    
+    // Allow localhost and Netlify domains
+    if (origin.includes('localhost') || 
+        origin.includes('netlify.app') ||
+        origin === 'http://localhost:3000' ||
+        origin === 'https://localhost:3000') {
+      console.log('CORS allowed for origin:', origin);
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
@@ -135,8 +143,10 @@ if (!mongoUri) {
   console.error('1. Go to your Railway dashboard');
   console.error('2. Click on your backend service');
   console.error('3. Go to "Variables" tab');
-  console.error('4. Add MONGODB_URI with your MongoDB connection string');
-  console.error('5. Also add NODE_ENV=production');
+  console.error('4. Add these environment variables:');
+  console.error('   - MONGODB_URI: your MongoDB connection string');
+  console.error('   - NODE_ENV: production');
+  console.error('   - JWT_SECRET: a secure random string for JWT tokens');
   console.error('');
   console.error('📝 Your MongoDB URI should look like:');
   console.error('mongodb+srv://username:password@cluster.mongodb.net/database');
