@@ -44,14 +44,28 @@ const limiter = rateLimit({
 app.use(limiter);
 
 // CORS
-app.use(cors({
-  origin: process.env.NODE_ENV === 'production' 
-    ? [
-        'https://apnadera.netlify.app', 
-        'https://sprightly-choux-d84160.netlify.app',
-        'https://*.netlify.app'
-      ] 
-    : 'http://localhost:3000',
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'https://localhost:3000',
+    'https://apnadera.netlify.app', 
+    'https://sprightly-choux-d84160.netlify.app',
+    'https://*.netlify.app'
+  ];
+  
+  app.use(cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) !== -1 || 
+          origin.endsWith('.netlify.app') ||
+          origin.includes('localhost')) {
+        callback(null, true);
+      } else {
+        console.log('CORS blocked origin:', origin);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
   credentials: true
 }));
 
