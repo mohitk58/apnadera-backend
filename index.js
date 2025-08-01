@@ -5,12 +5,24 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const multer = require('multer');
 
-// Load environment variables - use config.env only in development
+// Load environment variables - try multiple sources
 if (process.env.NODE_ENV !== 'production') {
+  // Development: try config.env first, then .env
   require('dotenv').config({ path: './config.env' });
+  if (!process.env.MONGODB_URI) {
+    require('dotenv').config();
+  }
 } else {
-  // In production, load from .env if it exists, otherwise use platform env vars
+  // Production: try .env first, then platform env vars
   require('dotenv').config();
+}
+
+// Debug environment variables (only in development)
+if (process.env.NODE_ENV !== 'production') {
+  console.log('Environment check:');
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
+  console.log('PORT:', process.env.PORT);
 }
 
 const authRoutes = require('./routes/auth');
@@ -96,8 +108,18 @@ app.use('*', (req, res) => {
 // Connect to MongoDB
 const mongoUri = process.env.MONGODB_URI;
 if (!mongoUri) {
-  console.error('MONGODB_URI environment variable is not set');
-  console.error('Please set MONGODB_URI in your environment variables');
+  console.error('❌ MONGODB_URI environment variable is not set');
+  console.error('');
+  console.error('🔧 To fix this in Railway:');
+  console.error('1. Go to your Railway dashboard');
+  console.error('2. Click on your backend service');
+  console.error('3. Go to "Variables" tab');
+  console.error('4. Add MONGODB_URI with your MongoDB connection string');
+  console.error('5. Also add NODE_ENV=production');
+  console.error('');
+  console.error('📝 Your MongoDB URI should look like:');
+  console.error('mongodb+srv://username:password@cluster.mongodb.net/database');
+  console.error('');
   process.exit(1);
 }
 
