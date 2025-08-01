@@ -69,41 +69,57 @@ router.post('/login', [
     .withMessage('Password is required')
 ], async (req, res) => {
   try {
+    console.log('Login attempt for email:', req.body.email);
+    
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      console.log('Validation errors:', errors.array());
       return res.status(400).json({ 
         error: 'Validation failed',
         details: errors.array()
       });
     }
+    
     const { email, password } = req.body;
+    console.log('Looking up user with email:', email);
+    
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
+      console.log('User not found for email:', email);
       return res.status(401).json({ 
         error: 'Invalid credentials',
         message: 'Email or password is incorrect'
       });
     }
+    
+    console.log('User found, comparing passwords');
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      console.log('Password mismatch for user:', email);
       return res.status(401).json({ 
         error: 'Invalid credentials',
         message: 'Email or password is incorrect'
       });
     }
+    
     if (!user.isActive) {
+      console.log('Inactive user attempt:', email);
       return res.status(401).json({ 
         error: 'Account deactivated',
         message: 'Your account has been deactivated. Please contact support.'
       });
     }
+    
+    console.log('Generating token for user:', user._id);
+    const token = generateToken(user._id);
+    
     res.json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
       avatar: user.avatar,
-      token: generateToken(user._id)
+      token: token
     });
   } catch (error) {
     console.error('Login error:', error);
