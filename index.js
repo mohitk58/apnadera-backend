@@ -59,11 +59,7 @@ app.use(
       const allowedOrigins = [
         "http://localhost:3000",
         "https://localhost:3000",
-        "http://localhost:5173",
-        "https://localhost:5173",
-        "https://apnadera.netlify.app",
-        "https://apnadera-frontend.netlify.app",
-        "https://apnadera-backend.railway.app",
+        "https://apnadera-backend-ad2z6p5w6-mohit59s-projects.vercel.app/",
       ];
 
       if (
